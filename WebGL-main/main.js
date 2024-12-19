@@ -11,7 +11,7 @@ function deg2rad(angle) {
 
 
 // Constructor
-function Model(name) {
+/*function Model(name) {
     this.name = name;
     this.iVertexBuffer = gl.createBuffer();
     this.count = 0;
@@ -32,7 +32,7 @@ function Model(name) {
    
         gl.drawArrays(gl.LINE_STRIP, 0, this.count);
     }
-}
+}*/
 
 
 // Constructor
@@ -101,7 +101,7 @@ function draw() {
 
 
 /* Initialize the WebGL context. Called from init() */
-function initGL() {
+/*function initGL() {
     let prog = createProgram( gl, vertexShaderSource, fragmentShaderSource );
 
     shProgram = new ShaderProgram('Basic', prog);
@@ -115,7 +115,7 @@ function initGL() {
     surface.BufferData(CreateSurfaceData());
 
     gl.enable(gl.DEPTH_TEST);
-}
+}*/
 
 
 /* Creates a program for use in the WebGL context gl, and returns the
