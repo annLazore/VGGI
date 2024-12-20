@@ -2,7 +2,7 @@
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 
-<title>PA#1</title>
+<title>PA#2</title>
 <style>
     body {
         background-color: #EEEEEE;
@@ -22,11 +22,21 @@
 </head>
 <body onload="init()">
 
-<h2>A Willis's Conical Edge with "Trackball" Mouse Rotation</h2>
+<h2>A Wallis's Conical Edge with "Trackball" Mouse Rotation</h2>
 
 <p id="message">Drag your mouse on the Conical Edge to rotate it.<br>
 (On a touch screen, you can use your finger.)</p>
 
+<p>
+    U Granularity: 
+    <input type="range" id="uGranularity" min="5" max="100" value="30" step="1">
+    <span id="uValue">30</span>
+</p>
+<p>
+    V Granularity: 
+    <input type="range" id="vGranularity" min="5" max="100" value="30" step="1">
+    <span id="vValue">30</span>
+</p>
 
 <div id="canvas-holder">
    <canvas width="600" height="600" id="webglcanvas" style="background-color:red"></canvas>

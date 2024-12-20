@@ -1,24 +1,58 @@
-
-
 // Vertex shader
 const vertexShaderSource = `
-attribute vec3 vertex;
-uniform mat4 ModelViewProjectionMatrix;
+attribute vec3 vertex; // Позиція вершини
+attribute vec3 normal; // Нормаль вершини
+
+uniform mat4 ModelViewProjectionMatrix; // Матриця проекції-вигляду
+uniform mat4 ModelMatrix;               // Матриця моделі
+
+varying vec3 fragPosition; // Позиція вершини у просторі світу
+varying vec3 fragNormal;   // Нормаль вершини у просторі світу
 
 void main() {
-    gl_Position = ModelViewProjectionMatrix * vec4(vertex,1.0);
-}`;
+    fragPosition = vec3(ModelMatrix * vec4(vertex, 1.0)); // Перетворення до світового простору
+    fragNormal = normalize(mat3(ModelMatrix) * normal);  // Нормалізація нормалі
+    gl_Position = ModelViewProjectionMatrix * vec4(vertex, 1.0); // Проекція
+}
+
+
+`;
+
 
 
 // Fragment shader
 const fragmentShaderSource = `
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-   precision highp float;
-#else
-   precision mediump float;
-#endif
+precision mediump float;
 
-uniform vec4 color;
+varying vec3 fragPosition; // Позиція у просторі світу
+varying vec3 fragNormal;   // Нормаль у просторі світу
+
+uniform vec3 light_position; // Позиція джерела світла
+uniform vec3 camera_position; // Позиція камери
+uniform vec4 baseColor;       // Базовий колір об'єкта
+
 void main() {
-    gl_FragColor = color;
-}`;
+    vec3 normal = normalize(fragNormal); // Нормалізація нормалі
+    vec3 lightDir = normalize(light_position - fragPosition); // Напрямок до світла
+    vec3 viewDir = normalize(camera_position - fragPosition); // Напрямок до камери
+
+    // Амбієнтне освітлення
+    vec3 ambient = 0.2 * baseColor.rgb;
+
+    // Дифузне освітлення
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = 0.5 * diff * baseColor.rgb;
+
+    // Спекулярне освітлення (Фонгова модель)
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0);
+    vec3 specular = 0.3 * spec * vec3(1.0); // Білий спекуляр
+
+    // Комбінація всіх компонент
+    vec3 color = ambient + diffuse + specular;
+
+    gl_FragColor = vec4(color, baseColor.a);
+}
+
+
+`;
