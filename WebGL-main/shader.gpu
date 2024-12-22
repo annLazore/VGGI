@@ -1,24 +1,84 @@
-
-
 // Vertex shader
 const vertexShaderSource = `
-attribute vec3 vertex;
-uniform mat4 ModelViewProjectionMatrix;
+attribute vec3 vertex; // Позиція вершини
+attribute vec3 normal; // Нормаль вершини
+attribute vec3 tangent; // Тангенс вершини
+attribute vec2 texCoord; // Текстурні координати
+
+uniform mat4 ModelViewProjectionMatrix; // Матриця проекції-вигляду
+uniform mat4 ModelMatrix;               // Матриця моделі
+uniform mat4 normalMatrix;              // Матриця нормалей
+
+varying vec3 fragPosition; // Позиція вершини у просторі світу
+varying vec3 fragNormal;   // Нормаль у просторі світу
+varying vec2 fragTexCoord; // Текстурні координати
+varying mat3 TBN;          // Матриця переходу до простору текстур
 
 void main() {
-    gl_Position = ModelViewProjectionMatrix * vec4(vertex,1.0);
-}`;
+    fragPosition = vec3(ModelMatrix * vec4(vertex, 1.0)); // Перетворення до світового простору
+    fragNormal = normalize(mat3(ModelMatrix) * normal);  // Нормалізація нормалі
+    fragTexCoord = texCoord; // Передаємо текстурні координати
+
+    // Gram-Schmidt ортогоналізація тангенса
+    vec3 T = normalize(mat3(ModelMatrix) * tangent); // Тангенс у світовому просторі
+    T = normalize(T - dot(T, fragNormal) * fragNormal); // Ортогоналізація тангенса
+    vec3 B = cross(fragNormal, T); // Бітангенс (перпендикуляр до нормалі та тангенса)
+
+    // Матриця переходу до простору текстур
+    TBN = mat3(T, B, fragNormal);
+
+    gl_Position = ModelViewProjectionMatrix * vec4(vertex, 1.0); // Проекція
+}
+
+`;
+
 
 
 // Fragment shader
 const fragmentShaderSource = `
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-   precision highp float;
-#else
-   precision mediump float;
-#endif
+precision mediump float;
 
-uniform vec4 color;
+varying vec3 fragPosition; // Позиція у просторі світу
+varying vec2 fragTexCoord; // Текстурні координати
+varying vec3 fragLightDir; // Напрямок до світла у просторі TBN
+varying vec3 fragViewDir;  // Напрямок до камери у просторі TBN
+
+uniform sampler2D diffuseTexture;  // Диффузна текстура
+uniform sampler2D normalTexture;   // Нормальна текстура
+uniform sampler2D roughnessTexture; // Текстура шорсткості
+
+uniform vec3 light_position;       // Позиція світла
+uniform vec3 camera_position;      // Позиція камери
+
 void main() {
-    gl_FragColor = color;
-}`;
+    // Отримуємо колір із дифузної текстури
+    vec3 diffuseColor = texture2D(diffuseTexture, fragTexCoord).rgb;
+
+    // Отримуємо нормаль із нормальної текстури та нормалізуємо
+    vec3 normalFromMap = texture2D(normalTexture, fragTexCoord).rgb;
+    vec3 adjustedNormal = normalize(normalFromMap * 2.0 - 1.0);
+
+    // Напрямки до світла та камери
+    vec3 lightDir = normalize(light_position - fragPosition);
+    vec3 viewDir = normalize(camera_position - fragPosition);
+
+    // Амбієнтне освітлення
+    vec3 ambient = 0.8 * diffuseColor;
+
+    // Дифузне освітлення
+    float diff = max(dot(adjustedNormal, lightDir), 0.0);
+    vec3 diffuse = diff * diffuseColor;
+
+    // Спекулярне освітлення (Phong)
+    vec3 reflectDir = reflect(-lightDir, adjustedNormal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0); // 32 - ступінь блиску
+    vec3 specular = spec * vec3(1.0); // Білий колір блиску
+
+    // Комбінуємо всі компоненти
+    vec3 finalColor = ambient + diffuse + specular;
+
+    gl_FragColor = vec4(finalColor, 1.0);
+}
+
+
+`;
